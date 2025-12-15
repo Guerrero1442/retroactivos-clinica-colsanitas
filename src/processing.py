@@ -5,9 +5,15 @@ Módulo para el procesamiento y transformación de datos para el cruce de retroa
 import numpy as np
 import pandas as pd
 
+from exceptions import DateFormatError
+
 
 def prepare_dataframes_for_crossing(
-    df_retro_excel: pd.DataFrame, df_upc_db: pd.DataFrame
+    df_retro_excel: pd.DataFrame,
+    df_upc_db: pd.DataFrame,
+    format_date_excel: str,
+    format_date_db: str,
+    format_date_crossing: str,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Prepara los dos DataFrames para el cruce, convirtiendo fechas y creando llaves.
@@ -20,31 +26,41 @@ def prepare_dataframes_for_crossing(
         Una tupla con los dos DataFrames procesados.
     """
     # Implementación de la preparación del DataFrame de Excel
-    df_retro_excel["fec cargo"] = pd.to_datetime(
-        df_retro_excel["fec cargo"].str.slice(0, 10),
-        format="%Y-%m-%d",
-        errors="coerce",  # Coerce errors to NaT
-    ).dt.strftime("%d-%m-%Y")
+    try:
+        df_retro_excel["fec cargo"] = pd.to_datetime(
+            df_retro_excel["fec cargo"].str.slice(0, 10),
+            format=format_date_excel,
+            errors="raise",  # Coerce errors to NaT
+        ).dt.strftime(format_date_crossing)
+    except ValueError as e:
+        raise DateFormatError(
+            "Error al convertir la fecha en el DataFrame de Excel"
+        ) from e
 
     df_retro_excel["llave_retroactivo"] = (
-        df_retro_excel["num factura"].str.strip()
-        + df_retro_excel["tip doc"].str.strip()
-        + df_retro_excel["num doc"].str.strip()
-        + df_retro_excel["Codigo Cups"].str.strip()
-        + df_retro_excel["fec cargo"].str.strip()
+        df_retro_excel["num factura"].str.strip().fillna("")
+        + df_retro_excel["tip doc"].str.strip().fillna("")
+        + df_retro_excel["num doc"].str.strip().fillna("")
+        + df_retro_excel["Codigo Cups"].str.strip().fillna("")
+        + df_retro_excel["fec cargo"].str.strip().fillna("")
     )
 
     # Implementación de la preparación del DataFrame de la BD
-    df_upc_db["f_prestacion"] = pd.to_datetime(
-        df_upc_db["f_prestacion"], format="%Y-%m-%d", errors="coerce"
-    ).dt.strftime("%d-%m-%Y")
+    try:
+        df_upc_db["f_prestacion"] = pd.to_datetime(
+            df_upc_db["f_prestacion"], format=format_date_db, errors="raise"
+        ).dt.strftime(format_date_crossing)
+    except ValueError as e:
+        raise DateFormatError(
+            "Error al convertir la fecha en el DataFrame de la BD"
+        ) from e
 
     df_upc_db["llave_upc"] = (
-        df_upc_db["no_factura"].str.strip()
-        + df_upc_db["tipo_id"].str.strip()
-        + df_upc_db["no_id"].str.strip()
-        + df_upc_db["cups"].str.strip()
-        + df_upc_db["f_prestacion"].str.strip()
+        df_upc_db["no_factura"].str.strip().fillna("")
+        + df_upc_db["tipo_id"].str.strip().fillna("")
+        + df_upc_db["no_id"].str.strip().fillna("")
+        + df_upc_db["cups"].str.strip().fillna("")
+        + df_upc_db["f_prestacion"].str.strip().fillna("")
     )
 
     return df_retro_excel, df_upc_db

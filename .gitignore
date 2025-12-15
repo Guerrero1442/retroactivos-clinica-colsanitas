@@ -8,3 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+
+*.yaml
+.env
+
+# Archivos gemini
+GEMINI.md
+
+# salidas y entradas
+outputs/
+inputs/

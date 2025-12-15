@@ -1,7 +1,7 @@
 # src/utils_db.py
 import socket
 from contextlib import contextmanager
-from typing import Any, Dict, Generator
+from typing import Generator
 
 import oracledb  # Import oracledb directly for specific error handling or connection options
 import pandas as pd
@@ -10,14 +10,15 @@ from sqlalchemy import create_engine, text
 from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy.engine import Connection, Engine
 
-from src.exceptions import (  # Import ConfigError from exceptions.py
+from config.settings import settings
+from exceptions import (  # Import ConfigError from exceptions.py
     ConfigError,
     DatabaseError,
 )
 
 
 @contextmanager
-def get_db_connection(config: Dict[str, Any]) -> Generator[Connection, None, None]:
+def get_db_connection() -> Generator[Connection, None, None]:
     """
     Establishes a database connection using SQLAlchemy and provides it via a context manager.
 
@@ -33,20 +34,11 @@ def get_db_connection(config: Dict[str, Any]) -> Generator[Connection, None, Non
     """
     conn = None
     try:
-        db_config = config.get("database", {})
-        if not all(
-            key in db_config
-            for key in ["user", "password", "host", "port", "service_name"]
-        ):
-            raise ConfigError(
-                "Missing database connection parameters in configuration."
-            )
-
         # Construct Oracle connection string for SQLAlchemy
         # Example: oracle+oracledb://user:pass@host:port/?service_name=service
         connection_string = (
-            f"oracle+oracledb://{db_config['user']}:{db_config['password']}@"
-            f"{db_config['host']}:{db_config['port']}/?service_name={db_config['service_name']}"
+            f"oracle+oracledb://{settings.db_user}:{settings.db_password}@"
+            f"{settings.db_host}:{settings.db_port}/?service_name={settings.db_service_name}"
         )
 
         engine: Engine = create_engine(connection_string)

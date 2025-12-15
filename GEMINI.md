@@ -1,9 +1,3 @@
-Claro que sí. Basándome en el análisis exhaustivo de los archivos que subiste (`README.md`, `pyproject.toml` y el código fuente en `src/`), he extraído las "buenas prácticas" y patrones de diseño que definen la calidad de ese repositorio.
-
-A continuación, he redactado un archivo `GEMINI.md` listo para usar. Este archivo servirá como "memoria de contexto" para que, cuando trabajes en tu nuevo proyecto usando la CLI de Gemini, yo (o cualquier instancia del modelo) siga estrictamente estos estándares de ingeniería de software.
-
-Aquí tienes el contenido sugerido para tu archivo `GEMINI.md`:
-
 # Contexto del Proyecto y Estándares de Ingeniería
 
 Este documento define los estándares de codificación, arquitectura y mejores prácticas que deben seguirse en este proyecto. El objetivo es mantener un código robusto, tipado, modular y fácil de mantener, replicando la calidad de ingeniería del proyecto de referencia "Actualización Base Fallecidos".
@@ -15,7 +9,7 @@ Este documento define los estándares de codificación, arquitectura y mejores p
 * **Manejo de Datos:** `pandas` (tipado fuerte en transformaciones).
 * **Base de Datos:** `SQLAlchemy` (ORM/Core) + `oracledb` (o el conector pertinente).
 * **Logging:** `loguru` (en lugar del módulo `logging` estándar).
-* **Configuración:** `PyYAML` o `pydantic-settings` (para separar configuración del código).
+* **Configuración:** `PyYAML` y `pydantic-settings` (para separar configuración del código).
 * **Calidad de Código:** `ruff` (linter/formatter) y `pyright` (validación de tipos estática).
 
 ## 2. Estructura del Proyecto
@@ -94,6 +88,69 @@ Para cualquier tarea de instalación o ejecución, preferir los comandos de `uv`
   * `uv add <paquete>` para instalar.
   * `uv run python main.py` para ejecutar.
   * `uv sync` para sincronizar entorno.
+  
+## 6\. Guia de Configuracion y Secretos
+
+Esta sección define los estándares para manejar configuraciones, constantes y credenciales en el proyecto.
+
+### 1. Resumen de Herramientas
+
+| Método | Uso Principal | Nivel de Seguridad | ¿Admite Secretos? | Validación |
+| :--- | :--- | :--- | :--- | :--- |
+| **YAML** (`config.yaml`) | Configuración lógica y estática | Baja | ❌ NO | No (Manual) |
+| **Pydantic + .env** | Credenciales y entorno | Alta | ✅ SÍ | Sí (Automática) |
+
+---
+
+### 2. Estándar de Implementación Híbrida
+
+Se utilizará un enfoque híbrido para maximizar la seguridad y la organización.
+
+#### 🟢 Usar YAML (`config.yaml`)
+Utilizar para **constantes de lógica de negocio** que no varían entre entornos y no son sensibles.
+* **Qué guardar:**
+    * Rutas de carpetas locales (no absolutas del sistema).
+    * Listas de correos fijos.
+    * Mapeos de columnas de Excel/CSV.
+    * Textos de menús o etiquetas de la UI.
+* **Regla de Oro:** Este archivo DEBE ser commiteado al repositorio. **NUNCA** guardar contraseñas aquí.
+
+#### 🟠 Usar Pydantic + .env (`settings.py`)
+Utilizar para **todo lo que cambia según el entorno** (Dev/Test/Prod) y **información sensible**.
+* **Qué guardar:**
+    * Credenciales de Base de Datos (Host, User, Password, Port).
+    * API Keys y Tokens.
+    * URLs de servicios externos.
+* **Beneficios:**
+    * **Validación de Tipos:** Pydantic garantiza que el puerto sea un `int`, la URL sea válida, etc. Si el `.env` está mal, la app no inicia.
+    * **Seguridad:** El archivo `.env` se agrega al `.gitignore` y **NUNCA** se sube al repositorio.
+
+---
+
+### 3. Ejemplo de Estructura
+
+#### Estructura de Archivos
+```text
+/
+├── .env                <-- NO SUBIR A GIT (Contiene secretos)
+├── .env.example        <-- Subir a Git (Variables vacías como guía)
+├── config.yaml         <-- Configuración estática (Archivo principal usado por la aplicación)
+├── config.yaml.example <-- Subir a Git (Plantilla de configuración con valores por defecto)
+├── main.py
+└── config/
+    └── settings.py     <-- Definición de Pydantic
+```
+
+## 6\. Configuración del Entorno de Desarrollo (Src Layout)
+
+Este proyecto utiliza una estructura **Src Layout** (el código fuente vive dentro de `/src`). Para que Python detecte correctamente los módulos y evitar errores de `ModuleNotFoundError`, es obligatorio instalar el proyecto en **modo editable**.
+
+**Paso Crítico:**
+Una vez creado el entorno virtual, ejecuta en la raíz del proyecto:
+
+```bash
+uv pip install -e .
+```
 
 ## 5\. Instrucciones para la IA (Gemini)
 
