@@ -1,7 +1,9 @@
 # src/log_config.py
-from loguru import logger
 import sys
 from pathlib import Path
+
+from loguru import logger
+
 
 def setup_logging():
     """
@@ -27,7 +29,7 @@ def setup_logging():
         level="INFO",
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
         compression="zip",  # Compress rotated files
-        serialize=False, # Set to True for JSON logs
+        serialize=False,  # Set to True for JSON logs
     )
 
     logger.info("Logging configured successfully.")

@@ -10,7 +10,6 @@ def test_prepare_dataframes_for_crossing():
     """
     Tests the preparation of DataFrames, including date conversion and key creation.
     """
-    # Datos de entrada
     df_retro_excel = pd.DataFrame(
         {
             "fec cargo": ["2023-01-15 10:00:00", "2023-01-16 12:00:00"],
@@ -30,7 +29,6 @@ def test_prepare_dataframes_for_crossing():
         }
     )
 
-    # Procesamiento
     df_retro_proc, df_upc_proc = prepare_dataframes_for_crossing(
         df_retro_excel.copy(),
         df_upc_db.copy(),
@@ -39,12 +37,10 @@ def test_prepare_dataframes_for_crossing():
         format_date_crossing="%d/%m/%Y",
     )
 
-    # Verificaciones para df_retro_proc
     assert "llave_retroactivo" in df_retro_proc.columns
     assert df_retro_proc["fec cargo"].tolist() == ["15/01/2023", "16/01/2023"]
     assert df_retro_proc["llave_retroactivo"].iloc[0] == "F001CC12389020115/01/2023"
 
-    # Verificaciones para df_upc_proc
     assert "llave_upc" in df_upc_proc.columns
     assert df_upc_proc["f_prestacion"].tolist() == ["15/01/2023", "17/01/2023"]
     assert df_upc_proc["llave_upc"].iloc[0] == "F001CC12389020115/01/2023"
@@ -54,7 +50,6 @@ def test_perform_crossing():
     """
     Tests the crossing logic between the two prepared DataFrames.
     """
-    # Datos con llaves ya preparadas
     df_retro_excel = pd.DataFrame(
         {
             "llave_retroactivo": [
@@ -68,10 +63,8 @@ def test_perform_crossing():
         {"llave_upc": ["F001CC12389020115-01-2023", "F003CC78989020317-01-2023"]}
     )
 
-    # Cruce
     df_resultado = perform_crossing(df_retro_excel, df_upc_db)
 
-    # Verificación de la columna 'encontrado_upc'
     expected = pd.Series(["SI", "NO", "NO"])
     assert "encontrado_upc" in df_resultado.columns
     assert all(df_resultado["encontrado_upc"] == expected)
@@ -100,7 +93,6 @@ def test_prepare_dataframes_with_missing_values():
         }
     )
 
-    # Esto debería ejecutarse sin errores
     df_retro_proc, df_upc_proc = prepare_dataframes_for_crossing(
         df_retro_excel,
         df_upc_db,
@@ -109,10 +101,6 @@ def test_prepare_dataframes_with_missing_values():
         format_date_crossing="%d/%m/%Y",
     )
 
-    # Verificar que las fechas malformadas resulten en NaT y luego en una cadena que lo refleje
-    # Nota: El comportamiento exacto con NaT en la llave depende de la conversión a string.
-    # str(pd.NaT) es 'NaT'. Si se usa .dt.strftime, los NaT se propagan.
-    # Aquí estamos validando que no se caiga y que las llaves se formen.
     assert "F002CE890202" in df_retro_proc["llave_retroactivo"].values
 
     assert "F001CC123" in df_upc_proc["llave_upc"].values

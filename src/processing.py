@@ -25,12 +25,11 @@ def prepare_dataframes_for_crossing(
     Returns:
         Una tupla con los dos DataFrames procesados.
     """
-    # Implementación de la preparación del DataFrame de Excel
     try:
         df_retro_excel["fec cargo"] = pd.to_datetime(
             df_retro_excel["fec cargo"].str.slice(0, 10),
             format=format_date_excel,
-            errors="raise",  # Coerce errors to NaT
+            errors="raise",
         ).dt.strftime(format_date_crossing)
     except ValueError as e:
         raise DateFormatError(
@@ -45,7 +44,6 @@ def prepare_dataframes_for_crossing(
         + df_retro_excel["fec cargo"].str.strip().fillna("")
     )
 
-    # Implementación de la preparación del DataFrame de la BD
     try:
         df_upc_db["f_prestacion"] = pd.to_datetime(
             df_upc_db["f_prestacion"], format=format_date_db, errors="raise"

@@ -3,20 +3,22 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
+from sqlalchemy import exc as sqlalchemy_exc
 
-from exceptions import ConfigError, DatabaseError
+from exceptions import DatabaseError
 from utils_db import fetch_data_in_chunks, get_db_connection, get_upc_data
 
-# Mock de la configuración de la base de datos
-DB_CONFIG = {
-    "database": {
-        "user": "test_user",
-        "password": "test_password",
-        "host": "test_host",
-        "port": "1521",
-        "service_name": "test_service",
-    }
-}
+
+@pytest.fixture(autouse=True)
+def mock_settings(monkeypatch):
+    """
+    Mocks settings to avoid relying on environment variables or .env files.
+    """
+    monkeypatch.setattr("utils_db.settings.db_user", "test_user")
+    monkeypatch.setattr("utils_db.settings.db_password", "test_password")
+    monkeypatch.setattr("utils_db.settings.db_host", "test_host")
+    monkeypatch.setattr("utils_db.settings.db_port", 1521)
+    monkeypatch.setattr("utils_db.settings.db_service_name", "test_service")
 
 
 @patch("utils_db.create_engine")
@@ -29,21 +31,13 @@ def test_get_db_connection_success(mock_create_engine):
     mock_create_engine.return_value = mock_engine
     mock_engine.connect.return_value = mock_conn
 
-    with get_db_connection(DB_CONFIG) as conn:
+    with get_db_connection() as conn:
         assert conn is not None
         mock_create_engine.assert_called_once()
         mock_engine.connect.assert_called_once()
-
-
-def test_get_db_connection_missing_config():
-    """
-    Tests that a ConfigError is raised for missing database connection parameters.
-    """
-    with pytest.raises(
-        ConfigError, match="Missing database connection parameters in configuration."
-    ):
-        with get_db_connection({"database": {}}):
-            pass
+        # Verify the connection string used
+        expected_url = "oracle+oracledb://test_user:test_password@test_host:1521/?service_name=test_service"
+        mock_create_engine.assert_called_with(expected_url)
 
 
 @patch("utils_db.create_engine", side_effect=Exception("Connection failed"))
@@ -52,7 +46,31 @@ def test_get_db_connection_failure(mock_create_engine):
     Tests that a DatabaseError is raised on connection failure.
     """
     with pytest.raises(DatabaseError, match="An unexpected database error occurred"):
-        with get_db_connection(DB_CONFIG):
+        with get_db_connection():
+            pass
+
+
+@patch("utils_db.create_engine")
+def test_get_db_connection_oracle_archiver_error(mock_create_engine):
+    """
+    Tests handling of Oracle archiver error (ORA-00257).
+    """
+    mock_engine = MagicMock()
+    mock_create_engine.return_value = mock_engine
+
+    # Mocking oracledb.Error which is what sqlalchemy might wrap
+    import oracledb
+
+    oracle_error = MagicMock(spec=oracledb.Error)
+    oracle_error.args = (MagicMock(code=257, message="Archiver error"),)
+
+    db_error = sqlalchemy_exc.DatabaseError("statement", "params", oracle_error)
+    mock_engine.connect.side_effect = db_error
+
+    with pytest.raises(
+        DatabaseError, match=r"Error de archivador de Oracle \(ORA-257\)"
+    ):
+        with get_db_connection():
             pass
 
 
@@ -62,14 +80,12 @@ def test_fetch_data_in_chunks_success():
     """
     mock_conn = MagicMock()
     query = "SELECT * FROM test_table"
-    expected_df = pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})
+    expected_df = pd.DataFrame({"col1": ["1", "2"], "col2": ["3", "4"]})
 
     # Mock de pd.read_sql_query para devolver un iterador
-    mock_read_sql_query = patch(
+    with patch(
         "utils_db.pd.read_sql_query", return_value=iter([expected_df])
-    )
-
-    with mock_read_sql_query as mock_read:
+    ) as mock_read:
         chunks = list(fetch_data_in_chunks(mock_conn, query, chunk_size=2))
         assert len(chunks) == 1
         pd.testing.assert_frame_equal(chunks[0], expected_df)
@@ -101,9 +117,9 @@ def test_get_upc_data_success(mock_fetch_data_in_chunks):
 
     # Simular que fetch_data_in_chunks devuelve DataFrames
     mock_fetch_data_in_chunks.side_effect = [
-        iter([pd.DataFrame({"id": [1, 2]})]),
-        iter([pd.DataFrame({"id": [3, 4]})]),
-        iter([pd.DataFrame({"id": [5]})]),
+        iter([pd.DataFrame({"id": ["1", "2"]})]),
+        iter([pd.DataFrame({"id": ["3", "4"]})]),
+        iter([pd.DataFrame({"id": ["5"]})]),
     ]
 
     df_upc = get_upc_data(mock_conn, base_query, facturas, batch_size, chunk_size)

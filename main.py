@@ -4,9 +4,9 @@ import pandas as pd
 from loguru import logger
 
 from config.settings import load_config
-from exceptions import ConfigError, DatabaseError, DateFormatError
-from processing import perform_crossing, prepare_dataframes_for_crossing
-from utils_db import get_db_connection, get_upc_data
+from src.exceptions import ConfigError, DatabaseError, DateFormatError
+from src.processing import perform_crossing, prepare_dataframes_for_crossing
+from src.utils_db import get_db_connection, get_upc_data
 
 
 def main():
