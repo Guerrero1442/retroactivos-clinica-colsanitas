@@ -5,7 +5,7 @@ Módulo para el procesamiento y transformación de datos para el cruce de retroa
 import numpy as np
 import pandas as pd
 
-from exceptions import DateFormatError
+from src.exceptions import DateFormatError
 
 
 def prepare_dataframes_for_crossing(

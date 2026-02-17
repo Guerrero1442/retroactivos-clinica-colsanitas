@@ -4,7 +4,7 @@ from typing import Any, Dict
 import yaml
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from exceptions import ConfigError
+from src.exceptions import ConfigError
 
 
 class Settings(BaseSettings):

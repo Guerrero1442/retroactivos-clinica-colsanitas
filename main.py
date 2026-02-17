@@ -68,6 +68,10 @@ def main():
     # 6. Guardar resultados
     df_final.to_csv(output_encontrados, sep="|", index=False)
     logger.info(f"Resultados guardados en '{proc_config['output']}'.")
+    
+    df_upc.to_csv(
+        proc_config["output_upc_data"], sep="|", index=False
+    )
 
 
 if __name__ == "__main__":
