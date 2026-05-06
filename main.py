@@ -20,7 +20,7 @@ def main():
     6. Guarda los resultados.
     """
     # 1. Cargar configuración
-    config_path = Path("config/config.yaml")
+    config_path = Path("src/config/config.yaml")
     config = load_config(config_path)
     proc_config = config["processing"]
     logger.info("Configuración cargada correctamente.")

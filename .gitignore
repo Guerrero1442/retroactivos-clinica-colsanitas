@@ -1,20 +1,46 @@
-# Python-generated files
+# --- Python & Build ---
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
+.installed.cfg
+*.manifest
+*.spec
 
-# Virtual environments
-.venv
+# --- Virtual Environments ---
+.venv/
+env/
+venv/
+ENV/
 
-*.yaml
+# --- Config & Secrets ---
 .env
+# Según GEMINI.md, config.yaml DEBE commitearse.
+# Si necesitas ignorar archivos YAML específicos, agrégalos por nombre.
 
-# Archivos gemini
-GEMINI.md
+# --- Tooling Caches ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyrightcheckpoints/
+.ipynb_checkpoints/
 
-# salidas y entradas
-outputs/
+# --- Logs ---
+logs/
+*.log
+
+# --- Data (Entradas y Salidas) ---
 inputs/
+outputs/
+
+# --- OS & IDE ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Gemini CLI ---
+GEMINI.md

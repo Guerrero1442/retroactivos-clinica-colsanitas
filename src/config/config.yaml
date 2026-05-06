@@ -1,0 +1,28 @@
+# Configuration file for the retroactivos-clinica-colsanitas project
+
+# Processing settings
+processing:
+  excel_path: "inputs/Retroactivo EPS _CKI_2025_ Final.xlsx"
+  excel_sheet_name: "APLICA RETROACTIVO"
+  output: "outputs/retroactivos_clinica_colsanitas.csv"
+  prestador_id: "800149384"
+  base_query: |
+    SELECT *
+    FROM tbl_suf_process_2025
+    WHERE procesado = '0'
+    AND prestador = {prestador_id}
+  db_batch_size: 1000
+  db_chunk_size: 10000
+  format_date_excel: "%Y-%m-%d"
+  format_date_db: "%Y-%m-%d"
+  format_date_crossing: "%d/%m/%Y"
+
+# Logging settings
+logging:
+  log_path: "logs"
+  log_level_console: "INFO"
+  log_level_file: "INFO"
+  log_rotation: "10 MB"
+  log_retention: "7 days"
+  log_compression: "zip"
+  log_serialize: False
