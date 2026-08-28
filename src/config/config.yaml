@@ -2,17 +2,23 @@
 
 # Processing settings
 processing:
-  excel_path: "inputs/Retroactivo EPS _CKI_2025_ Final.xlsx"
-  excel_sheet_name: "APLICA RETROACTIVO"
+  excel_path: "inputs/Retroactivo tarifas evento 2026 EPS Clinica Colsanitas.xlsb"
+  excel_sheet_name: null
+  excluded_sheets:
+    - "Retroactivo resumen 2026"
+    - "Códigos Salas y Materiales"
+    - "Codigos Salas y Materiales"
+  excel_engine: "calamine"
   output: "outputs/retroactivos_clinica_colsanitas.csv"
+  output_upc_data: "outputs/upc_data.csv"
   prestador_id: "800149384"
   base_query: |
     SELECT *
-    FROM tbl_suf_process_2025
+    FROM tbl_suf_process_2026
     WHERE procesado = '0'
-    AND prestador = {prestador_id}
-  db_batch_size: 1000
-  db_chunk_size: 10000
+    AND prestador = '{prestador_id}'
+  db_batch_size: 900
+  db_chunk_size: 50000
   format_date_excel: "%Y-%m-%d"
   format_date_db: "%Y-%m-%d"
   format_date_crossing: "%d/%m/%Y"

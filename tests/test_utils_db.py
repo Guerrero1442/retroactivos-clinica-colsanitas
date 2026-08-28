@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 from sqlalchemy import exc as sqlalchemy_exc
 
-from exceptions import DatabaseError
-from utils_db import fetch_data_in_chunks, get_db_connection, get_upc_data
+from src.exceptions import DatabaseError
+from src.utils_db import fetch_data_in_chunks, get_db_connection, get_upc_data
 
 
 @pytest.fixture(autouse=True)
@@ -14,14 +14,14 @@ def mock_settings(monkeypatch):
     """
     Mocks settings to avoid relying on environment variables or .env files.
     """
-    monkeypatch.setattr("utils_db.settings.db_user", "test_user")
-    monkeypatch.setattr("utils_db.settings.db_password", "test_password")
-    monkeypatch.setattr("utils_db.settings.db_host", "test_host")
-    monkeypatch.setattr("utils_db.settings.db_port", 1521)
-    monkeypatch.setattr("utils_db.settings.db_service_name", "test_service")
+    monkeypatch.setattr("src.utils_db.settings.db_user", "test_user")
+    monkeypatch.setattr("src.utils_db.settings.db_password", "test_password")
+    monkeypatch.setattr("src.utils_db.settings.db_host", "test_host")
+    monkeypatch.setattr("src.utils_db.settings.db_port", 1521)
+    monkeypatch.setattr("src.utils_db.settings.db_service_name", "test_service")
 
 
-@patch("utils_db.create_engine")
+@patch("src.utils_db.create_engine")
 def test_get_db_connection_success(mock_create_engine):
     """
     Tests successful database connection.
@@ -40,7 +40,7 @@ def test_get_db_connection_success(mock_create_engine):
         mock_create_engine.assert_called_with(expected_url)
 
 
-@patch("utils_db.create_engine", side_effect=Exception("Connection failed"))
+@patch("src.utils_db.create_engine", side_effect=Exception("Connection failed"))
 def test_get_db_connection_failure(mock_create_engine):
     """
     Tests that a DatabaseError is raised on connection failure.
@@ -50,7 +50,7 @@ def test_get_db_connection_failure(mock_create_engine):
             pass
 
 
-@patch("utils_db.create_engine")
+@patch("src.utils_db.create_engine")
 def test_get_db_connection_oracle_archiver_error(mock_create_engine):
     """
     Tests handling of Oracle archiver error (ORA-00257).
@@ -84,7 +84,7 @@ def test_fetch_data_in_chunks_success():
 
     # Mock de pd.read_sql_query para devolver un iterador
     with patch(
-        "utils_db.pd.read_sql_query", return_value=iter([expected_df])
+        "src.utils_db.pd.read_sql_query", return_value=iter([expected_df])
     ) as mock_read:
         chunks = list(fetch_data_in_chunks(mock_conn, query, chunk_size=2))
         assert len(chunks) == 1
@@ -92,7 +92,7 @@ def test_fetch_data_in_chunks_success():
         mock_read.assert_called_once()
 
 
-@patch("utils_db.pd.read_sql_query", side_effect=Exception("Failed to fetch data"))
+@patch("src.utils_db.pd.read_sql_query", side_effect=Exception("Failed to fetch data"))
 def test_fetch_data_in_chunks_failure(mock_read_sql_query):
     """
     Tests that DatabaseError is raised when fetching data in chunks fails.
@@ -104,7 +104,7 @@ def test_fetch_data_in_chunks_failure(mock_read_sql_query):
         list(fetch_data_in_chunks(mock_conn, query))
 
 
-@patch("utils_db.fetch_data_in_chunks")
+@patch("src.utils_db.fetch_data_in_chunks")
 def test_get_upc_data_success(mock_fetch_data_in_chunks):
     """
     Tests successful retrieval of UPC data.
@@ -129,7 +129,7 @@ def test_get_upc_data_success(mock_fetch_data_in_chunks):
     assert mock_fetch_data_in_chunks.call_count == 3
 
 
-@patch("utils_db.fetch_data_in_chunks", return_value=iter([]))
+@patch("src.utils_db.fetch_data_in_chunks", return_value=iter([]))
 def test_get_upc_data_no_data(mock_fetch_data_in_chunks):
     """
     Tests that an empty DataFrame is returned when no data is found.

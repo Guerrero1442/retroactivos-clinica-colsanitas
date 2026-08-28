@@ -2,8 +2,8 @@
 import pandas as pd
 import pytest
 
-from exceptions import DateFormatError
-from processing import perform_crossing, prepare_dataframes_for_crossing
+from src.exceptions import DateFormatError
+from src.processing import perform_crossing, prepare_dataframes_for_crossing
 
 
 def test_prepare_dataframes_for_crossing():
@@ -138,3 +138,42 @@ def test_prepare_dataframes_with_invalid_date_format():
             format_date_db="%Y-%m-%d",
             format_date_crossing="%d/%m/%Y",
         )
+
+
+def test_load_retro_data_file_not_found():
+    """
+    Verifica que se lance SourceReadError si el archivo no existe.
+    """
+    from src.exceptions import SourceReadError
+    from src.processing import load_retro_data
+    from pathlib import Path
+
+    with pytest.raises(SourceReadError, match="El archivo no existe"):
+        load_retro_data(Path("archivo_inexistente.xlsx"))
+
+
+def test_load_retro_data_multisheet(tmp_path):
+    """
+    Verifica que load_retro_data lea múltiples hojas y filtre las excluidas.
+    """
+    from src.processing import load_retro_data
+
+    excel_file = tmp_path / "test_retro.xlsx"
+    with pd.ExcelWriter(excel_file, engine="openpyxl") as writer:
+        pd.DataFrame({"num_factura": ["F1"], "tip_doc": ["CC"], "num_doc": ["1"], "cod_insumo_servicio": ["890201"], "fec_cargo": ["2026-01-01"]}).to_excel(writer, sheet_name="HOJA1", index=False)
+        pd.DataFrame({"num_factura": ["F2"], "tip_doc": ["CC"], "num_doc": ["2"], "cod_insumo_servicio": ["890202"], "fec_cargo": ["2026-01-02"]}).to_excel(writer, sheet_name="HOJA2", index=False)
+        pd.DataFrame({"resumen": [123]}).to_excel(writer, sheet_name="Retroactivo resumen 2026", index=False)
+        pd.DataFrame({"codigo": [456]}).to_excel(writer, sheet_name="Códigos Salas y Materiales", index=False)
+
+    df_loaded = load_retro_data(
+        excel_file,
+        sheet_name=None,
+        excluded_sheets=["Retroactivo resumen 2026", "Códigos Salas y Materiales"],
+        engine="openpyxl",
+    )
+
+    assert len(df_loaded) == 2
+    assert set(df_loaded["hoja_origen"].unique()) == {"HOJA1", "HOJA2"}
+    assert "F1" in df_loaded["num_factura"].values
+    assert "F2" in df_loaded["num_factura"].values
+

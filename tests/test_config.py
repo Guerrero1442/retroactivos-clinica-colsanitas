@@ -6,7 +6,7 @@ import yaml
 from pydantic import ValidationError
 
 from config.settings import Settings, load_config
-from exceptions import ConfigError
+from src.exceptions import ConfigError
 
 
 def test_load_config_success(tmp_path):
